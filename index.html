@@ -444,6 +444,43 @@
       font-size: 0.88rem;
     }
 
+    /* Backup card */
+    .backup-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .backup-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .btn-backup {
+      flex: 1;
+      border: 1.5px solid var(--border);
+      background: var(--cream);
+      border-radius: 10px;
+      padding: 12px 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: background 0.18s, border-color 0.18s;
+      text-align: center;
+    }
+    .btn-backup:hover { background: #eef; border-color: var(--green-mid); }
+    .btn-backup.primary { background: var(--green-mid); color: white; border-color: var(--green-mid); }
+    .btn-backup.primary:hover { background: var(--green-dark); }
+    .backup-msg {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--green-mid);
+      font-weight: 600;
+      min-height: 18px;
+    }
+    .backup-msg.error { color: #c0392b; }
+
     /* ══════════════════════════════════════════
        EXERCISE DETAIL BOTTOM SHEET
     ══════════════════════════════════════════ */
@@ -612,6 +649,9 @@
   </nav>
 
 </div><!-- /app -->
+
+<!-- Hidden file input for import -->
+<input type="file" id="import-file-input" accept=".json,application/json" style="display:none">
 
 <!-- Exercise Detail Sheet -->
 <div id="detail-overlay" class="detail-overlay"></div>
@@ -1072,6 +1112,25 @@ function renderProgress() {
   container.appendChild(c2);
 
   initCharts();
+
+  // Backup card
+  const backup = document.createElement('div');
+  backup.className = 'backup-card';
+  backup.innerHTML = `
+    <div class="card-title">Data Backup</div>
+    <div class="backup-btns">
+      <button class="btn-backup primary" id="btn-export">⬇ Export JSON</button>
+      <button class="btn-backup" id="btn-import">⬆ Import JSON</button>
+    </div>
+    <div class="backup-msg" id="backup-msg"></div>
+  `;
+  container.appendChild(backup);
+
+  document.getElementById('btn-export').addEventListener('click', exportData);
+  document.getElementById('btn-import').addEventListener('click', () => {
+    document.getElementById('import-file-input').value = '';
+    document.getElementById('import-file-input').click();
+  });
 }
 
 function getStreakStats() {
@@ -1406,6 +1465,72 @@ document.getElementById('dismiss-install').addEventListener('click', () => {
   s.installPromptDismissed = true;
   saveSettings(s);
 });
+
+// ── Export / Import ───────────────────────────────────────────────────────────
+function exportData() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    golf_workouts: loadWorkouts(),
+    golf_exercise_settings: loadSettings(),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `golf-exercises-backup-${todayKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showBackupMsg('Exported successfully!', false);
+}
+
+document.getElementById('import-file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.golf_workouts) throw new Error('No workout data found in file.');
+
+      // Merge workouts: existing dates are preserved, new dates added
+      const existing = loadWorkouts();
+      const incoming = data.golf_workouts;
+      let added = 0, updated = 0;
+      for (const [date, workout] of Object.entries(incoming)) {
+        if (!existing[date]) { existing[date] = workout; added++; }
+        else if (!existing[date].completed && workout.completed) { existing[date] = workout; updated++; }
+      }
+      saveWorkouts(existing);
+
+      // Merge settings (only bring in weeklyGoal, don't reset dismiss state)
+      if (data.golf_exercise_settings?.weeklyGoal) {
+        const s = loadSettings();
+        s.weeklyGoal = data.golf_exercise_settings.weeklyGoal;
+        saveSettings(s);
+        initGoalBtn();
+      }
+
+      const msg = `Imported: ${added} new day${added !== 1 ? 's' : ''}, ${updated} updated.`;
+      showBackupMsg(msg, false);
+
+      // Refresh today data and re-render
+      todayData = getOrCreateToday();
+      updateProgressBar();
+      if (document.getElementById('today-screen').classList.contains('active')) renderToday();
+    } catch (err) {
+      showBackupMsg('Import failed: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+});
+
+function showBackupMsg(text, isError) {
+  const el = document.getElementById('backup-msg');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'backup-msg' + (isError ? ' error' : '');
+  setTimeout(() => { if (el) el.textContent = ''; }, 4000);
+}
 
 // ── Completion overlay click-to-dismiss ───────────────────────────────────────
 document.getElementById('completion-overlay').addEventListener('click', () => {
