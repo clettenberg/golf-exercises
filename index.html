@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Golf Exercises</title>
+  <link rel="manifest" id="manifest-link">
+  <meta name="theme-color" content="#1b4332">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Golf Fit">
+  <style>
+    :root {
+      --green-dark:  #1b4332;
+      --green-mid:   #2d6a4f;
+      --green-light: #74c69d;
+      --cream:       #f8f9fa;
+      --card-bg:     #ffffff;
+      --text-primary:   #1a1a1a;
+      --text-secondary: #555;
+      --border:  #e0e0e0;
+      --shadow:  0 2px 12px rgba(0,0,0,0.08);
+      --radius:  12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--cream);
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+
+    /* ── App Shell ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* ── iOS Install Banner ── */
+    #install-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fff3cd;
+      border-bottom: 1px solid #f0c000;
+      padding: 10px 16px;
+      padding-top: max(10px, calc(env(safe-area-inset-top, 0px) + 6px));
+      font-size: 0.84rem;
+      color: #7d5a00;
+      flex-shrink: 0;
+    }
+    #dismiss-install {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: #7d5a00;
+      padding: 4px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    /* ── Header ── */
+    #header {
+      background: linear-gradient(135deg, var(--green-dark), var(--green-mid));
+      color: white;
+      padding: 12px 20px;
+      padding-top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+      padding-left:  max(20px, calc(env(safe-area-inset-left,  0px) + 16px));
+      padding-right: max(20px, calc(env(safe-area-inset-right, 0px) + 16px));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    #header h1 { font-size: 1.1rem; font-weight: 700; line-height: 1.2; }
+    .subtitle { font-size: 0.78rem; opacity: 0.8; margin-top: 2px; }
+    .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-icon {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white;
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .btn-icon:hover { background: rgba(255,255,255,0.28); }
+
+    /* ── Screens Wrapper ── */
+    #screens-wrapper {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .screen {
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .screen.active { display: block; }
+
+    /* ── Bottom Tab Bar ── */
+    #bottom-tabs {
+      display: flex;
+      background: var(--green-dark);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      flex-shrink: 0;
+    }
+    .tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-top: 2px solid transparent;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 8px 4px 6px;
+      min-height: 52px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      transition: color 0.2s, border-top-color 0.2s;
+      letter-spacing: 0.02em;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-icon { font-size: 1.2rem; line-height: 1; }
+    .tab.active { color: white; border-top-color: var(--green-light); }
+    .tab:hover:not(.active) { color: rgba(255,255,255,0.8); }
+
+    /* ── Shared Card ── */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .card-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    /* ── Badges ── */
+    .badge-excellent { background: #d8f3dc; color: #1b4332; }
+    .badge-good      { background: #b7e4c7; color: #1b4332; }
+    .badge-fair      { background: #fff3cd; color: #7d6608; }
+    .badge-poor      { background: #fde8e8; color: #922b21; }
+
+    /* ══════════════════════════════════════════
+       TODAY SCREEN
+    ══════════════════════════════════════════ */
+    #today-screen { background: var(--cream); }
+
+    /* Progress bar — sticky */
+    #today-progress-wrap {
+      padding: 10px 16px 8px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .progress-label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+    .progress-fraction { font-size: 0.82rem; font-weight: 700; color: var(--green-dark); }
+    .progress-track {
+      height: 5px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--green-light);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    /* Exercise list */
+    #exercise-list {
+      padding: 10px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    /* Phase label */
+    .phase-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      padding: 6px 2px 0;
+    }
+
+    /* Exercise card */
+    .ex-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 13px 14px;
+      box-shadow: var(--shadow);
+      transition: background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ex-card.done-card { background: #d8f3dc; }
+
+    .ex-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ex-check {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .ex-card.done-card .ex-check {
+      background: var(--green-mid);
+      border-color: var(--green-mid);
+    }
+    .ex-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: 0.93rem;
+      line-height: 1.3;
+    }
+    .ex-card.done-card .ex-name {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+    .ex-sets-label {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .info-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      padding: 4px 2px;
+      flex-shrink: 0;
+      line-height: 1;
+      opacity: 0.55;
+      transition: opacity 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .info-btn:hover { opacity: 1; }
+
+    /* Set chips */
+    .set-chips {
+      display: flex;
+      gap: 8px;
+      margin-top: 11px;
+      flex-wrap: wrap;
+    }
+    .set-chip {
+      background: var(--cream);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s, border-color 0.18s, color 0.18s;
+      color: var(--text-secondary);
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .set-chip.done {
+      background: var(--green-light);
+      border-color: var(--green-mid);
+      color: var(--green-dark);
+      font-weight: 700;
+    }
+    .set-chip:active { transform: scale(0.95); }
+
+    /* ══════════════════════════════════════════
+       WEEK SCREEN
+    ══════════════════════════════════════════ */
+    #week-screen { background: var(--cream); }
+    #week-content {
+      padding: 12px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Goal bar card */
+    .goal-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+    }
+    .goal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .goal-text { font-size: 0.88rem; font-weight: 600; }
+    .goal-count { font-size: 0.88rem; color: var(--text-secondary); }
+    .goal-track {
+      height: 8px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .goal-fill {
+      height: 100%;
+      background: var(--green-light);
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+
+    /* Day card */
+    .day-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 13px 16px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid transparent;
+    }
+    .day-card.today { border-left-color: var(--green-light); }
+    .day-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .day-name-wrap { }
+    .day-name { font-weight: 700; font-size: 0.95rem; }
+    .day-date { font-size: 0.8rem; color: var(--text-secondary); margin-top: 1px; }
+    .day-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .badge-rest { background: var(--border); color: var(--text-secondary); }
+    .day-detail {
+      margin-top: 5px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* ══════════════════════════════════════════
+       PROGRESS SCREEN
+    ══════════════════════════════════════════ */
+    #progress-screen { background: var(--cream); }
+    #progress-content {
+      padding: 12px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--green-dark);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+    .stat-suffix {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .chart-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .chart-offline {
+      text-align: center;
+      padding: 20px 16px;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+    }
+
+    /* ══════════════════════════════════════════
+       EXERCISE DETAIL BOTTOM SHEET
+    ══════════════════════════════════════════ */
+    .detail-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .detail-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .detail-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 32px rgba(0,0,0,0.15);
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.34, 1.3, 0.64, 1);
+      z-index: 201;
+      max-height: 82vh;
+      overflow-y: auto;
+      padding: 0 20px;
+      padding-bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+    }
+    .detail-sheet.open { transform: translateY(0); }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 12px auto 18px;
+    }
+    .sheet-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--green-dark);
+      margin-bottom: 3px;
+    }
+    .sheet-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+    .sheet-section { margin-top: 14px; }
+    .sheet-section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .sheet-text {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+    .sheet-tip {
+      background: #e8f5e9;
+      border-left: 3px solid var(--green-mid);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--green-dark);
+      margin-top: 8px;
+    }
+
+    /* ══════════════════════════════════════════
+       COMPLETION OVERLAY
+    ══════════════════════════════════════════ */
+    #completion-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(27, 67, 50, 0.95);
+      z-index: 300;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: white;
+      text-align: center;
+      padding: 40px;
+      animation: fadeIn 0.35s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes popIn  { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .completion-check {
+      font-size: 4.5rem;
+      animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .completion-title { font-size: 1.9rem; font-weight: 800; }
+    .completion-sub   { font-size: 1rem; opacity: 0.82; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- iOS Install Banner -->
+  <div id="install-banner">
+    <span>📲 Tap Share → Add to Home Screen to install</span>
+    <button id="dismiss-install">✕</button>
+  </div>
+
+  <!-- Header -->
+  <div id="header">
+    <div>
+      <h1>⛳ Golf Exercises</h1>
+      <div class="subtitle" id="header-subtitle"></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" id="btn-goal" title="Tap to change weekly goal">Goal: 4×</button>
+    </div>
+  </div>
+
+  <!-- Screens -->
+  <div id="screens-wrapper">
+
+    <!-- ── Today Screen ── -->
+    <div id="today-screen" class="screen active">
+      <div id="today-progress-wrap">
+        <div class="progress-row">
+          <span class="progress-label">Today's Workout</span>
+          <span class="progress-fraction" id="progress-fraction">0 / 7</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="exercise-list"></div>
+    </div>
+
+    <!-- ── Week Screen ── -->
+    <div id="week-screen" class="screen">
+      <div id="week-content"></div>
+    </div>
+
+    <!-- ── Progress Screen ── -->
+    <div id="progress-screen" class="screen">
+      <div id="progress-content"></div>
+    </div>
+
+  </div><!-- /screens-wrapper -->
+
+  <!-- Bottom Tab Bar -->
+  <nav id="bottom-tabs">
+    <button class="tab active" data-screen="today">
+      <span class="tab-icon">⚡</span>
+      <span>Today</span>
+    </button>
+    <button class="tab" data-screen="week">
+      <span class="tab-icon">📅</span>
+      <span>Week</span>
+    </button>
+    <button class="tab" data-screen="progress">
+      <span class="tab-icon">📈</span>
+      <span>Progress</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- Exercise Detail Sheet -->
+<div id="detail-overlay" class="detail-overlay"></div>
+<div id="detail-sheet" class="detail-sheet">
+  <div class="sheet-handle"></div>
+  <div id="sheet-content"></div>
+</div>
+
+<!-- Completion Overlay -->
+<div id="completion-overlay" style="display:none;">
+  <div class="completion-check">✓</div>
+  <div class="completion-title">Workout Complete!</div>
+  <div class="completion-sub" id="completion-sub">All 7 exercises done!</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+'use strict';
+
+// ── Exercise Data ──────────────────────────────────────────────────────────────
+const EXERCISES = [
+  { id: 'ankle-circles', name: 'Alphabet Ankle Circles',       phase: 1, hasSets: false },
+  { id: 'big-toe',       name: 'Big Toe Isolations',           phase: 1, hasSets: false },
+  { id: 'calf-raises',   name: 'Slow Eccentric Calf Raises',   phase: 2, hasSets: true, sets: 3, reps: 10 },
+  { id: 'tib-raises',    name: 'Tibialis Raises',              phase: 2, hasSets: true, sets: 3, reps: 15 },
+  { id: 'towel-curls',   name: 'Towel Curls',                  phase: 2, hasSets: true, sets: 3, reps: 1,  repLabel: 'scrunch' },
+  { id: 'rdl',           name: 'Single-Leg Romanian Deadlift', phase: 3, hasSets: true, sets: 3, reps: 10 },
+  { id: 'clock-reach',   name: 'Single-Leg Clock Reach',       phase: 3, hasSets: true, sets: 1, reps: 5,  repLabel: 'rotation' },
+];
+
+const PHASE_LABELS = {
+  1: 'Phase 1 — Mobility & Control',
+  2: 'Phase 2 — Strengthening',
+  3: 'Phase 3 — Golf & Run Specifics',
+};
+
+const EXERCISE_INFO = {
+  'ankle-circles': {
+    duration: '~2 min each foot',
+    instructions: 'Sit or stand. Lift one foot off the ground and trace all 26 letters of the alphabet with your big toe — as large and deliberate as you can. Switch feet and repeat.',
+    tip: 'The bigger and slower the letters, the better the mobility benefit. Push the range of motion at the edges.',
+  },
+  'big-toe': {
+    duration: '~2 min',
+    instructions: 'Stand with feet flat. Press your big toe firmly into the floor while lifting the other four toes up. Then lift your big toe while pressing the other four toes down. Alternate slowly, holding each position 2–3 seconds.',
+    tip: 'This trains intrinsic foot control that\'s essential for a stable stance through the golf swing — especially on the trailing foot at impact.',
+  },
+  'calf-raises': {
+    duration: '3 sets × 10 reps',
+    instructions: 'Stand on the edge of a step with heels hanging off. Rise up slowly (2 sec), hold 1 sec at the top, then lower slowly over 3–4 seconds below the step level. Use bodyweight to start; add a backpack for resistance over time.',
+    tip: 'The slow eccentric (lowering) phase is what builds tendon resilience and prevents Achilles issues. Rushing the descent wastes the most important part.',
+  },
+  'tib-raises': {
+    duration: '3 sets × 15 reps',
+    instructions: 'Lean back against a wall with feet about 12 inches out. Lift your toes and forefoot up toward your shins as high as possible, hold 1 sec, lower. Or stand with heels on a step edge and repeat the same motion.',
+    tip: 'Strengthens the tibialis anterior — key for shin splint prevention and controlling foot landing during walking 18 holes.',
+  },
+  'towel-curls': {
+    duration: '3 sets × 1 scrunch cycle',
+    instructions: 'Place a small hand towel flat on the floor. Stand on it barefoot. Curl all your toes inward to scrunch and grip the towel, pulling it toward you. Flatten toes, reset the towel, and repeat.',
+    tip: 'Builds toe flexor strength for push-off power and arch stability. Bare feet only — shoes defeat the purpose.',
+  },
+  'rdl': {
+    duration: '3 sets × 10 reps each side',
+    instructions: 'Stand on one leg with a slight bend in the knee. Hinge forward at the hip, reaching the opposite hand toward the floor while your back leg extends straight behind you. Keep hips level and core tight. Return by squeezing the glute of the standing leg.',
+    tip: 'Aim for a perfect T: torso and back leg form one horizontal line at the bottom. The hip stability built here shows up directly in your follow-through balance.',
+  },
+  'clock-reach': {
+    duration: '1 set × 5 rotations each side',
+    instructions: 'Balance on one leg, slight knee bend. Reach your free foot out to 12, 2, 4, 6, 8, and 10 o\'clock positions — tapping lightly each time and returning to center. Complete 5 full clock rotations, then switch legs.',
+    tip: 'The farther you can reach without losing balance, the better. This ankle proprioception is exactly what you need for stable stances on uneven fairways.',
+  },
+};
+
+// ── Date & Storage Helpers ────────────────────────────────────────────────────
+function toDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function todayKey() { return toDateKey(new Date()); }
+
+function loadWorkouts() {
+  try { return JSON.parse(localStorage.getItem('golf_workouts') || '{}'); }
+  catch { return {}; }
+}
+function saveWorkouts(w) { localStorage.setItem('golf_workouts', JSON.stringify(w)); }
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('golf_exercise_settings') || '{}');
+    return { weeklyGoal: 4, installPromptDismissed: false, ...s };
+  } catch { return { weeklyGoal: 4, installPromptDismissed: false }; }
+}
+function saveSettings(s) { localStorage.setItem('golf_exercise_settings', JSON.stringify(s)); }
+
+function getCurrentWeekDates() {
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return toDateKey(d);
+  });
+}
+
+function formatDuration(startedAt, completedAt) {
+  if (!startedAt || !completedAt) return '';
+  const mins = Math.round((new Date(completedAt) - new Date(startedAt)) / 60000);
+  return mins < 1 ? '< 1 min' : `${mins} min`;
+}
+
+function getDayStatus(dateKey) {
+  const workouts = loadWorkouts();
+  const workout = workouts[dateKey];
+  const today = todayKey();
+  if (!workout) {
+    return dateKey < today ? 'missed' : dateKey === today ? 'none' : 'rest';
+  }
+  if (workout.completed) return 'done';
+  if (workout.startedAt) return 'progress';
+  return 'none';
+}
+
+// ── Today Screen ──────────────────────────────────────────────────────────────
+let todayData = null;
+
+function getOrCreateToday() {
+  const workouts = loadWorkouts();
+  const key = todayKey();
+  if (!workouts[key]) {
+    workouts[key] = {
+      exercises: EXERCISES.map(ex => {
+        const entry = { id: ex.id, completed: false };
+        if (ex.hasSets) {
+          entry.sets = Array.from({ length: ex.sets }, () => ({ done: false }));
+        }
+        return entry;
+      }),
+    };
+    saveWorkouts(workouts);
+  }
+  return workouts[key];
+}
+
+function getTodayExData(id) {
+  return (todayData.exercises || []).find(e => e.id === id);
+}
+
+function countCompleted() {
+  return (todayData.exercises || []).filter(e => e.completed).length;
+}
+
+function renderToday() {
+  todayData = getOrCreateToday();
+  const list = document.getElementById('exercise-list');
+  list.innerHTML = '';
+
+  let lastPhase = null;
+  EXERCISES.forEach((ex, idx) => {
+    if (ex.phase !== lastPhase) {
+      const ph = document.createElement('div');
+      ph.className = 'phase-label';
+      ph.textContent = PHASE_LABELS[ex.phase];
+      list.appendChild(ph);
+      lastPhase = ex.phase;
+    }
+    list.appendChild(makeExCard(ex, idx));
+  });
+
+  updateProgressBar();
+}
+
+function makeExCard(ex, idx) {
+  const exData = getTodayExData(ex.id);
+  const done = exData?.completed || false;
+
+  const card = document.createElement('div');
+  card.className = 'ex-card' + (done ? ' done-card' : '');
+  card.id = 'ex-card-' + ex.id;
+  card.dataset.id = ex.id;
+  card.dataset.idx = idx;
+
+  let setsLabel = '';
+  if (ex.hasSets) {
+    setsLabel = `${ex.sets} × ${ex.reps}` + (ex.repLabel ? ` ${ex.repLabel}` : '');
+  }
+
+  const chipsHtml = ex.hasSets ? buildChipsHtml(ex, exData) : '';
+
+  card.innerHTML = `
+    <div class="ex-row">
+      <div class="ex-check">${done ? '✓' : ''}</div>
+      <div class="ex-name">${ex.name}</div>
+      ${setsLabel ? `<span class="ex-sets-label">${setsLabel}</span>` : ''}
+      <button class="info-btn" data-ex="${ex.id}" aria-label="Exercise info">ⓘ</button>
+    </div>
+    ${chipsHtml ? `<div class="set-chips">${chipsHtml}</div>` : ''}
+  `;
+
+  // Freeform toggle (click card body, not chips or info btn)
+  if (!ex.hasSets) {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.info-btn')) return;
+      toggleFreeform(ex.id);
+    });
+  }
+
+  // Set chip listeners
+  if (ex.hasSets) {
+    card.querySelectorAll('.set-chip').forEach((chip, setIdx) => {
+      chip.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleSet(ex.id, setIdx);
+      });
+    });
+  }
+
+  // Info button
+  card.querySelector('.info-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    showDetail(ex.id);
+  });
+
+  return card;
+}
+
+function buildChipsHtml(ex, exData) {
+  const sets = exData?.sets || Array.from({ length: ex.sets }, () => ({ done: false }));
+  return sets.map((s, i) =>
+    `<button class="set-chip${s.done ? ' done' : ''}" data-set="${i}">${s.done ? '✓ ' : ''}Set ${i + 1}</button>`
+  ).join('');
+}
+
+function ensureStartedAt() {
+  const workouts = loadWorkouts();
+  const key = todayKey();
+  if (workouts[key] && !workouts[key].startedAt) {
+    workouts[key].startedAt = new Date().toISOString();
+    saveWorkouts(workouts);
+    todayData = workouts[key];
+  }
+}
+
+function toggleFreeform(id) {
+  ensureStartedAt();
+  const workouts = loadWorkouts();
+  const key = todayKey();
+  const exData = workouts[key].exercises.find(e => e.id === id);
+  if (!exData) return;
+  exData.completed = !exData.completed;
+  saveWorkouts(workouts);
+  todayData = workouts[key];
+
+  // Update card
+  const card = document.getElementById('ex-card-' + id);
+  if (card) {
+    card.classList.toggle('done-card', exData.completed);
+    const check = card.querySelector('.ex-check');
+    if (check) check.textContent = exData.completed ? '✓' : '';
+  }
+
+  updateProgressBar();
+  checkCompletion();
+}
+
+function toggleSet(exerciseId, setIdx) {
+  ensureStartedAt();
+  const workouts = loadWorkouts();
+  const key = todayKey();
+  const exData = workouts[key].exercises.find(e => e.id === exerciseId);
+  if (!exData || !exData.sets) return;
+
+  exData.sets[setIdx].done = !exData.sets[setIdx].done;
+  const allDone = exData.sets.every(s => s.done);
+  exData.completed = allDone;
+  saveWorkouts(workouts);
+  todayData = workouts[key];
+
+  const card = document.getElementById('ex-card-' + exerciseId);
+  if (card) {
+    card.classList.toggle('done-card', allDone);
+    const check = card.querySelector('.ex-check');
+    if (check) check.textContent = allDone ? '✓' : '';
+
+    // Rebuild chips in place
+    const ex = EXERCISES.find(e => e.id === exerciseId);
+    const chipsWrap = card.querySelector('.set-chips');
+    if (chipsWrap) {
+      chipsWrap.innerHTML = buildChipsHtml(ex, exData);
+      chipsWrap.querySelectorAll('.set-chip').forEach((chip, sIdx) => {
+        chip.addEventListener('click', e => { e.stopPropagation(); toggleSet(exerciseId, sIdx); });
+      });
+    }
+
+    if (allDone) {
+      const exIdx = parseInt(card.dataset.idx, 10);
+      const nextEx = EXERCISES[exIdx + 1];
+      if (nextEx) {
+        const nextCard = document.getElementById('ex-card-' + nextEx.id);
+        if (nextCard) setTimeout(() => nextCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 280);
+      }
+    }
+  }
+
+  updateProgressBar();
+  checkCompletion();
+}
+
+function updateProgressBar() {
+  const done = countCompleted();
+  const total = EXERCISES.length;
+  document.getElementById('progress-fraction').textContent = `${done} / ${total}`;
+  document.getElementById('progress-fill').style.width = Math.round((done / total) * 100) + '%';
+}
+
+function checkCompletion() {
+  if (countCompleted() < EXERCISES.length) return;
+  const workouts = loadWorkouts();
+  const key = todayKey();
+  if (workouts[key].completed) return; // already celebrated
+  workouts[key].completed = true;
+  workouts[key].completedAt = new Date().toISOString();
+  saveWorkouts(workouts);
+  todayData = workouts[key];
+  const dur = formatDuration(workouts[key].startedAt, workouts[key].completedAt);
+  showCompletion(dur);
+}
+
+function showCompletion(dur) {
+  const overlay = document.getElementById('completion-overlay');
+  const sub = document.getElementById('completion-sub');
+  sub.textContent = dur ? `Done in ${dur} · All 7 exercises` : 'All 7 exercises done!';
+  overlay.style.display = 'flex';
+  setTimeout(() => { overlay.style.display = 'none'; }, 2500);
+}
+
+// ── Week Screen ───────────────────────────────────────────────────────────────
+function renderWeek() {
+  const settings = loadSettings();
+  const dates = getCurrentWeekDates();
+  const today = todayKey();
+  const doneCount = dates.filter(d => getDayStatus(d) === 'done').length;
+  const goal = settings.weeklyGoal;
+  const pct = Math.min(100, Math.round((doneCount / goal) * 100));
+
+  const container = document.getElementById('week-content');
+  container.innerHTML = '';
+
+  // Goal bar
+  const goalCard = document.createElement('div');
+  goalCard.className = 'goal-card';
+  goalCard.innerHTML = `
+    <div class="goal-row">
+      <span class="goal-text">Weekly Goal</span>
+      <span class="goal-count">${doneCount} / ${goal} workouts</span>
+    </div>
+    <div class="goal-track">
+      <div class="goal-fill" style="width:${pct}%; background:${doneCount >= goal ? '#40916c' : 'var(--green-light)'}"></div>
+    </div>
+  `;
+  container.appendChild(goalCard);
+
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  dates.forEach((dateKey, i) => {
+    container.appendChild(makeDayCard(dateKey, dayNames[i], dateKey === today));
+  });
+}
+
+function makeDayCard(dateKey, dayName, isToday) {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dateLabel = new Date(Date.UTC(y, m-1, d)).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', timeZone: 'UTC',
+  });
+
+  const status = getDayStatus(dateKey);
+  const workouts = loadWorkouts();
+  const workout = workouts[dateKey];
+
+  const STATUS_CONFIG = {
+    done:     { label: 'Done',        cls: 'badge-excellent', emoji: '✓' },
+    progress: { label: 'In Progress', cls: 'badge-fair',      emoji: '→' },
+    missed:   { label: 'Missed',      cls: 'badge-poor',      emoji: '✗' },
+    rest:     { label: 'Rest Day',    cls: 'badge-rest',      emoji: '—' },
+    none:     { label: isToday ? 'Today' : 'Rest Day', cls: 'badge-rest', emoji: isToday ? '●' : '—' },
+  };
+  const sc = STATUS_CONFIG[status] || STATUS_CONFIG.none;
+
+  let detail = '';
+  if (status === 'done' && workout) {
+    const dur = formatDuration(workout.startedAt, workout.completedAt);
+    const n = (workout.exercises || []).filter(e => e.completed).length;
+    detail = `<div class="day-detail">${dur ? dur + ' · ' : ''}${n} / ${EXERCISES.length} exercises</div>`;
+  } else if (status === 'progress' && workout) {
+    const n = (workout.exercises || []).filter(e => e.completed).length;
+    detail = `<div class="day-detail">${n} / ${EXERCISES.length} exercises done</div>`;
+  }
+
+  const card = document.createElement('div');
+  card.className = 'day-card' + (isToday ? ' today' : '');
+  card.innerHTML = `
+    <div class="day-card-top">
+      <div class="day-name-wrap">
+        <div class="day-name">${dayName}</div>
+        <div class="day-date">${dateLabel}</div>
+      </div>
+      <span class="day-badge ${sc.cls}">${sc.emoji} ${sc.label}</span>
+    </div>
+    ${detail}
+  `;
+  return card;
+}
+
+// ── Progress Screen ───────────────────────────────────────────────────────────
+let weeklyChart = null;
+let consistencyChart = null;
+
+function renderProgress() {
+  const container = document.getElementById('progress-content');
+  container.innerHTML = '';
+
+  // Destroy old charts before recreating canvases
+  if (weeklyChart)      { weeklyChart.destroy();      weeklyChart = null; }
+  if (consistencyChart) { consistencyChart.destroy(); consistencyChart = null; }
+
+  const stats = getStreakStats();
+
+  // Stat grid
+  const grid = document.createElement('div');
+  grid.className = 'stats-grid';
+  [
+    { value: stats.currentStreak, label: 'Current Streak',  suffix: stats.currentStreak === 1 ? 'day' : 'days' },
+    { value: stats.bestStreak,    label: 'Best Streak',     suffix: stats.bestStreak === 1 ? 'day' : 'days' },
+    { value: stats.totalWorkouts, label: 'Total Workouts',  suffix: '' },
+    { value: stats.thisMonth,     label: 'This Month',      suffix: '' },
+  ].forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-label">${s.label}</div>
+      ${s.suffix ? `<div class="stat-suffix">${s.suffix}</div>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+  container.appendChild(grid);
+
+  // Chart 1
+  const c1 = document.createElement('div');
+  c1.className = 'chart-card';
+  c1.innerHTML = '<div class="card-title">Workout Frequency — Last 8 Weeks</div><canvas id="chart-weekly" height="170"></canvas>';
+  container.appendChild(c1);
+
+  // Chart 2
+  const c2 = document.createElement('div');
+  c2.className = 'chart-card';
+  c2.innerHTML = '<div class="card-title">Exercise Consistency — Last 30 Days</div><canvas id="chart-consistency" height="230"></canvas>';
+  container.appendChild(c2);
+
+  initCharts();
+}
+
+function getStreakStats() {
+  const workouts = loadWorkouts();
+  const today = new Date();
+  const todayStr = toDateKey(today);
+  const monthStr = todayStr.slice(0, 7);
+
+  const completedDates = Object.keys(workouts)
+    .filter(k => workouts[k].completed)
+    .sort();
+
+  // Current streak — count backward from today (or yesterday if today not done)
+  let currentStreak = 0;
+  const check = new Date(today);
+  if (!workouts[todayStr]?.completed) check.setDate(check.getDate() - 1);
+  while (true) {
+    const k = toDateKey(check);
+    if (workouts[k]?.completed) {
+      currentStreak++;
+      check.setDate(check.getDate() - 1);
+    } else break;
+  }
+
+  // Best streak
+  let bestStreak = 0, run = 0, prevDate = null;
+  for (const ds of completedDates) {
+    if (!prevDate) {
+      run = 1;
+    } else {
+      const diff = (new Date(ds) - new Date(prevDate)) / 86400000;
+      run = diff === 1 ? run + 1 : 1;
+    }
+    if (run > bestStreak) bestStreak = run;
+    prevDate = ds;
+  }
+  bestStreak = Math.max(bestStreak, currentStreak);
+
+  return {
+    currentStreak,
+    bestStreak,
+    totalWorkouts: completedDates.length,
+    thisMonth: completedDates.filter(d => d.startsWith(monthStr)).length,
+  };
+}
+
+function getWeeklyData() {
+  const workouts = loadWorkouts();
+  const today = new Date();
+  const goal = loadSettings().weeklyGoal;
+  const data = [];
+
+  for (let w = 7; w >= 0; w--) {
+    const dow = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1) - w * 7);
+    monday.setHours(0, 0, 0, 0);
+
+    let count = 0;
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + d);
+      if (day > today) break;
+      if (workouts[toDateKey(day)]?.completed) count++;
+    }
+
+    const label = w === 0
+      ? 'This Wk'
+      : monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    data.push({ label, count, metGoal: count >= goal });
+  }
+  return data;
+}
+
+function getExerciseConsistency() {
+  const workouts = loadWorkouts();
+  const today = new Date();
+
+  const workoutDays = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const k = toDateKey(d);
+    if (workouts[k]?.startedAt || workouts[k]?.completed) workoutDays.push(k);
+  }
+  if (!workoutDays.length) return EXERCISES.map(ex => ({ name: ex.name, pct: 0 }));
+
+  return EXERCISES.map(ex => {
+    const done = workoutDays.filter(k => {
+      const e = (workouts[k]?.exercises || []).find(e => e.id === ex.id);
+      return e?.completed;
+    }).length;
+    return { name: ex.name, pct: Math.round((done / workoutDays.length) * 100) };
+  });
+}
+
+function initCharts() {
+  if (typeof Chart === 'undefined') {
+    ['chart-weekly', 'chart-consistency'].forEach(id => {
+      const canvas = document.getElementById(id);
+      if (canvas) {
+        const msg = document.createElement('div');
+        msg.className = 'chart-offline';
+        msg.textContent = 'Charts require an internet connection on first load.';
+        canvas.replaceWith(msg);
+      }
+    });
+    return;
+  }
+
+  const goal = loadSettings().weeklyGoal;
+  const weeklyData = getWeeklyData();
+  const consistData = getExerciseConsistency();
+
+  const weeklyCtx = document.getElementById('chart-weekly');
+  if (weeklyCtx) {
+    weeklyChart = new Chart(weeklyCtx, {
+      type: 'bar',
+      data: {
+        labels: weeklyData.map(d => d.label),
+        datasets: [{
+          label: 'Workouts',
+          data: weeklyData.map(d => d.count),
+          backgroundColor: weeklyData.map(d => d.metGoal ? '#74c69d' : '#2d6a4f'),
+          borderRadius: 5,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              afterLabel: ctx => ctx.raw >= goal ? '✓ Goal met' : `${goal - ctx.raw} more to goal`,
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 7,
+            ticks: { stepSize: 1, color: '#555' },
+            grid: { color: '#e8e8e8' },
+          },
+          x: { grid: { display: false }, ticks: { color: '#555', font: { size: 10 } } },
+        },
+      },
+    });
+
+    // Draw goal line via plugin
+    Chart.register({
+      id: 'goalLine-weekly',
+      afterDraw(chart) {
+        if (chart.canvas.id !== 'chart-weekly') return;
+        const { ctx, chartArea, scales } = chart;
+        const y = scales.y.getPixelForValue(goal);
+        ctx.save();
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = '#e63946';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.stroke();
+        ctx.restore();
+      },
+    });
+  }
+
+  const consistCtx = document.getElementById('chart-consistency');
+  if (consistCtx) {
+    consistencyChart = new Chart(consistCtx, {
+      type: 'bar',
+      data: {
+        labels: consistData.map(d => {
+          // Shorten long names for axis
+          const words = d.name.split(' ');
+          return words.length > 3 ? words.slice(0, 3).join(' ') + '…' : d.name;
+        }),
+        datasets: [{
+          label: 'Completion %',
+          data: consistData.map(d => d.pct),
+          backgroundColor: '#74c69d',
+          borderRadius: 4,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: ctx => ` ${ctx.raw}% of workouts` },
+          },
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { callback: v => v + '%', color: '#555', font: { size: 10 } },
+            grid: { color: '#e8e8e8' },
+          },
+          y: { grid: { display: false }, ticks: { color: '#444', font: { size: 11 } } },
+        },
+      },
+    });
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.screen === id));
+  document.getElementById(id + '-screen').classList.add('active');
+  if (id === 'week')     renderWeek();
+  if (id === 'progress') renderProgress();
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => showScreen(tab.dataset.screen));
+});
+
+// ── Exercise Detail Sheet ─────────────────────────────────────────────────────
+function showDetail(exId) {
+  const ex = EXERCISES.find(e => e.id === exId);
+  const info = EXERCISE_INFO[exId] || {};
+  if (!ex) return;
+
+  document.getElementById('sheet-content').innerHTML = `
+    <div class="sheet-title">${ex.name}</div>
+    ${info.duration ? `<div class="sheet-meta">${info.duration}</div>` : ''}
+    ${info.instructions ? `
+      <div class="sheet-section">
+        <div class="sheet-section-label">How to do it</div>
+        <div class="sheet-text">${info.instructions}</div>
+      </div>` : ''}
+    ${info.tip ? `
+      <div class="sheet-section">
+        <div class="sheet-section-label">Golf Tip</div>
+        <div class="sheet-tip">${info.tip}</div>
+      </div>` : ''}
+  `;
+
+  document.getElementById('detail-overlay').classList.add('open');
+  document.getElementById('detail-sheet').classList.add('open');
+}
+
+function hideDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  document.getElementById('detail-sheet').classList.remove('open');
+}
+
+document.getElementById('detail-overlay').addEventListener('click', hideDetail);
+
+// ── Header & Goal Btn ─────────────────────────────────────────────────────────
+function updateHeader() {
+  document.getElementById('header-subtitle').textContent = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  });
+}
+
+document.getElementById('btn-goal').addEventListener('click', () => {
+  const s = loadSettings();
+  s.weeklyGoal = s.weeklyGoal >= 6 ? 2 : s.weeklyGoal + 1;
+  saveSettings(s);
+  document.getElementById('btn-goal').textContent = `Goal: ${s.weeklyGoal}×`;
+  if (document.getElementById('week-screen').classList.contains('active')) renderWeek();
+});
+
+function initGoalBtn() {
+  const s = loadSettings();
+  document.getElementById('btn-goal').textContent = `Goal: ${s.weeklyGoal}×`;
+}
+
+// ── PWA Setup ─────────────────────────────────────────────────────────────────
+function initPWA() {
+  // Inject manifest via blob
+  const manifest = {
+    name: 'Golf Exercises',
+    short_name: 'Golf Fit',
+    start_url: './',
+    display: 'standalone',
+    orientation: 'portrait',
+    theme_color: '#1b4332',
+    background_color: '#1b4332',
+    icons: [{
+      src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛳</text></svg>',
+      sizes: '144x144',
+      type: 'image/svg+xml',
+    }],
+  };
+  try {
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    document.getElementById('manifest-link').href = URL.createObjectURL(blob);
+  } catch (_) {}
+
+  // Register SW (best-effort; blob scope may be restricted in some browsers)
+  if ('serviceWorker' in navigator) {
+    const SW = `
+const CACHE = 'golf-exercises-v1';
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+self.addEventListener('fetch', e => {
+  if (e.request.mode === 'navigate') {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+  }
+});
+`.trim();
+    try {
+      const blob = new Blob([SW], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    } catch (_) {}
+  }
+}
+
+function checkIOSInstall() {
+  const s = loadSettings();
+  if (s.installPromptDismissed) return;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS && !navigator.standalone) {
+    document.getElementById('install-banner').style.display = 'flex';
+  }
+}
+
+document.getElementById('dismiss-install').addEventListener('click', () => {
+  document.getElementById('install-banner').style.display = 'none';
+  const s = loadSettings();
+  s.installPromptDismissed = true;
+  saveSettings(s);
+});
+
+// ── Completion overlay click-to-dismiss ───────────────────────────────────────
+document.getElementById('completion-overlay').addEventListener('click', () => {
+  document.getElementById('completion-overlay').style.display = 'none';
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+updateHeader();
+initGoalBtn();
+renderToday();
+initPWA();
+checkIOSInstall();
+</script>
+</body>
+</html>
